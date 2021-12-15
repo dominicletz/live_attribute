@@ -63,37 +63,39 @@ defmodule LiveAttribute do
     * `socket` the LiveView socket where the assigns should be executed on
     * `subscribe` the subscribe callback to start the subscription e.g. `&Users.subscribe/0`
     * `filter` an optional filter if you don't want to update on each event. The filter can either be an expression
-               using `:_` as wildcard parameter such as `{Accounts, [:user, :_], :_}`. Alternatively `filter`
-               can be a function with one parameter
-               _Note_ LiveAttribute is issuing each subscribe call in an isolated helper process, so you only need
-               to add filters to reduce the scope of a single subscription.
+      using `:_` as wildcard parameter such as `{Accounts, [:user, :_], :_}`. Alternatively `filter`
+      can be a function with one parameter
+      _Note_ LiveAttribute is issuing each subscribe call in an isolated helper process, so you only need
+      to add filters to reduce the scope of a single subscription.
     * `refresher` the function callback to load the new values after a subscription event has
-                fired.
+      fired.
 
   """
 
   @type socket :: map()
 
   @typedoc """
-    The refresher list or function.
+  The refresher list or function.
 
-    Should preferably be a list of `{key, callback}` pairs to load the new attribute values.
-    The `callback` thereby can have optionally one argument to read context from the socket.
+  Should preferably be a list of `{key, callback}` pairs to load the new attribute values.
+  The `callback` thereby can have optionally one argument to read context from the socket.
 
-    Alternatively the refresher can be a single argument function instead of a list. In this
-    case the function is applied to the socket and thus the user has to ensure that
-    needed `assign()` calls are made manually.
+  Alternatively the refresher can be a single argument function instead of a list. In this
+  case the function is applied to the socket and thus the user has to ensure that
+  needed `assign()` calls are made manually.
 
-    ## Examples
+  ## Examples
 
-    iex> assign_attribute(socket, &User.subscribe(), users: &User.list_all/0)
+  ```
+  iex> assign_attribute(socket, &User.subscribe(), users: &User.list_all/0)
 
-    iex> assign_attribute(socket, &User.subscribe(),
-      fn socket -> User.list_all() -- socket.assigns.blacklist end
-    )
-    iex> assign_attribute(socket, &User.subscribe(), fn socket ->
-      assign(users: User.list_all() -- socket.assigns.blacklist)
-    end)
+  iex> assign_attribute(socket, &User.subscribe(),
+    fn socket -> User.list_all() -- socket.assigns.blacklist end
+  )
+  iex> assign_attribute(socket, &User.subscribe(), fn socket ->
+    assign(users: User.list_all() -- socket.assigns.blacklist)
+  end)
+  ```
   """
   @type refresher :: [{atom(), (() -> any()) | (socket() -> any())}] | (socket() -> socket())
 
