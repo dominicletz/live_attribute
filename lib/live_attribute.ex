@@ -3,72 +3,60 @@ defmodule LiveAttribute do
   defstruct [:refresher, :subscribe, :target, :filter]
 
   @moduledoc """
-    LiveAttribute makes binding updateable values easier. To use it add it to your LiveView using `use LiveAttribute`
-    and then use the function `assign_attribute(socket, subscribe_callback, property_callbacks)` to register attributes.
+  LiveAttribute makes binding updateable values easier. To use it add it to your LiveView using `use LiveAttribute`
+  and then use the function `assign_attribute(socket, subscribe_callback, property_callbacks)` to register attributes.
 
-    The attributes will listen to all incoming events and update their assigns of your LiveView automatically, saving
-    you the hassle of implementing independent `handle_info()` and `update_...()` calls.
+  The attributes will listen to all incoming events and update their assigns of your LiveView automatically, saving
+  you the hassle of implementing independent `handle_info()` and `update_...()` calls.
 
-    ## Example using LiveAttribute
+  ## Example using LiveAttribute
 
-    ```
-    defmodule UserLive do
-      use Phoenix.LiveView
-      use LiveAttribute
+  ```
+  defmodule UserLive do
+    use Phoenix.LiveView
+    use LiveAttribute
 
-      def mount(_params, _session, socket) do
-        {:ok, assign_attribute(socket, &Accounts.subscribe/0, users: &Accounts.list_users/0)}
-      end
-
-      def handle_event("delete_user", %{"id" => user_id}, socket) do
-        Accounts.get_user!(user_id)
-        |> Accounts.delete_user()
-
-        {:noreply, socket}
-      end
+    def mount(_params, _session, socket) do
+      {:ok, assign_attribute(socket, &Accounts.subscribe/0, users: &Accounts.list_users/0)}
     end
-    ```
 
+    def handle_event("delete_user", %{"id" => user_id}, socket) do
+      Accounts.get_user!(user_id)
+      |> Accounts.delete_user()
 
-    ## Same Example without LiveAttribute
-    ```
-    defmodule UserLive do
-      use Phoenix.LiveView
-
-      def mount(_params, _session, socket) do
-        if connected?(socket), do: Accounts.subscribe()
-        {:ok, update_users(socket)}
-      end
-
-      defp update_users(socket) do
-        users = Accounts.list_users()
-        assign(socket, users: users)
-      end
-
-      def handle_event("delete_user", %{"id" => user_id}, socket) do
-        Accounts.get_user!(user_id)
-        |> Accounts.delete_user()
-
-        {:noreply, socket}
-      end
-
-      def handle_info({Accounts, [:user, _], _}, socket) do
-        {:noreply, update_users(socket)}
-      end
+      {:noreply, socket}
     end
-    ```
+  end
+  ```
 
-    # assign_attribute(socket, subscribe, filter \\ :_, refresher)
 
-    * `socket` the LiveView socket where the assigns should be executed on
-    * `subscribe` the subscribe callback to start the subscription e.g. `&Users.subscribe/0`
-    * `filter` an optional filter if you don't want to update on each event. The filter can either be an expression
-      using `:_` as wildcard parameter such as `{Accounts, [:user, :_], :_}`. Alternatively `filter`
-      can be a function with one parameter
-      _Note_ LiveAttribute is issuing each subscribe call in an isolated helper process, so you only need
-      to add filters to reduce the scope of a single subscription.
-    * `refresher` the function callback to load the new values after a subscription event has
-      fired.
+  ## Same Example without LiveAttribute
+  ```
+  defmodule UserLive do
+    use Phoenix.LiveView
+
+    def mount(_params, _session, socket) do
+      if connected?(socket), do: Accounts.subscribe()
+      {:ok, update_users(socket)}
+    end
+
+    defp update_users(socket) do
+      users = Accounts.list_users()
+      assign(socket, users: users)
+    end
+
+    def handle_event("delete_user", %{"id" => user_id}, socket) do
+      Accounts.get_user!(user_id)
+      |> Accounts.delete_user()
+
+      {:noreply, socket}
+    end
+
+    def handle_info({Accounts, [:user, _], _}, socket) do
+      {:noreply, update_users(socket)}
+    end
+  end
+  ```
 
   """
 
@@ -141,6 +129,39 @@ defmodule LiveAttribute do
     end
   end
 
+  @doc """
+  Assigns a new attribute to the given socket.
+
+  * `socket` the LiveView socket where the assigns should be executed on
+  * `subscribe` the subscribe callback to start the subscription e.g. `&Users.subscribe/0`
+  * `filter` an optional filter if you don't want to update on each event. The filter can either be an expression
+    using `:_` as wildcard parameter such as `{Accounts, [:user, :_], :_}`. Alternatively `filter`
+    can be a function with one parameter
+    _Note_ LiveAttribute is issuing each subscribe call in an isolated helper process, so you only need
+    to add filters to reduce the scope of a single subscription.
+  * `refresher` the function callback to load the new values after a subscription event has
+    fired.
+
+  ## Example
+
+  ```
+  iex> socket = assign_attribute(socket, &Users.subscribe/0, users: &Users.list_all/0)
+  ```
+
+  """
+  def assign_attribute(_socket, _subscribe, _filter \\ :_, _refresher), do: :docs
+
+  @doc """
+  Allows force updating an attribute. This is useful for example when the update chain of the attribute
+  depends on another socket.assign that is not subscribed to.
+
+  ## Example
+
+  ```
+  iex> socket = update_attribute(socket, :users)
+  ```
+
+  """
   def update_attribute(socket, name) do
     refresher =
       :global.whereis_name({LiveAttribute, self(), name})
@@ -216,4 +237,13 @@ defmodule LiveAttribute do
   @doc false
   def apply(_socket, refresher) when is_function(refresher, 0), do: refresher.()
   def apply(socket, refresher) when is_function(refresher, 1), do: refresher.(socket)
+
+  @doc false
+  def child_spec(init_arg) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [init_arg]}
+    }
+    |> Supervisor.child_spec([])
+  end
 end
