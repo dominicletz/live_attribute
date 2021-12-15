@@ -49,7 +49,7 @@ defmodule LiveAttribute.MixProject do
       maintainers: @maintainers,
       licenses: ["MIT"],
       links: %{github: @url},
-      files: ~w(src lib priv LICENSE.md mix.exs README.md)
+      files: ~w(lib LICENSE.md mix.exs README.md)
     ]
   end
 
