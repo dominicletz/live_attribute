@@ -30,7 +30,7 @@ defmodule LiveAttribute.MixProject do
       lint: [
         "compile",
         "format --check-formatted",
-        "credo --only warning"
+        "credo"
       ]
     ]
   end
@@ -49,8 +49,7 @@ defmodule LiveAttribute.MixProject do
       maintainers: @maintainers,
       licenses: ["MIT"],
       links: %{github: @url},
-      files:
-        ~w(src lib priv LICENSE.md mix.exs README.md)
+      files: ~w(src lib priv LICENSE.md mix.exs README.md)
     ]
   end
 

@@ -198,17 +198,18 @@ defmodule LiveAttribute do
     {:reply, refresher, state}
   end
 
-  defp matches?(:_, _any), do: true
-  defp matches?(fun, any) when is_function(fun, 1), do: fun.(any)
-  defp matches?(same, same), do: true
+  @doc false
+  def matches?(:_, _any), do: true
+  def matches?(fun, any) when is_function(fun, 1), do: fun.(any)
+  def matches?(same, same), do: true
 
-  defp matches?(tuple1, tuple2) when is_tuple(tuple1) and is_tuple(tuple2),
+  def matches?(tuple1, tuple2) when is_tuple(tuple1) and is_tuple(tuple2),
     do: matches?(Tuple.to_list(tuple1), Tuple.to_list(tuple2))
 
-  defp matches?([head1 | rest1], [head2 | rest2]),
+  def matches?([head1 | rest1], [head2 | rest2]),
     do: matches?(head1, head2) and matches?(rest1, rest2)
 
-  defp matches?(_, _), do: false
+  def matches?(_, _), do: false
 
   @doc false
   def apply(_socket, refresher) when is_function(refresher, 0), do: refresher.()
