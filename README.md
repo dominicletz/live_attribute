@@ -8,7 +8,7 @@ you the hassle of implementing independent `handle_info()` and `update_...()` ca
 
 ## Example using LiveAttribute
 
-```
+```elixir
 defmodule UserLive do
   use Phoenix.LiveView
   use LiveAttribute
@@ -29,7 +29,7 @@ end
 
 ## Same Example without LiveAttribute
 
-```
+```elixir
 defmodule UserLive do
   use Phoenix.LiveView
 
