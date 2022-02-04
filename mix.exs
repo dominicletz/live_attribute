@@ -1,7 +1,7 @@
 defmodule LiveAttribute.MixProject do
   use Mix.Project
 
-  @version "1.0.1"
+  @version "1.0.2"
   @name "LiveAttribute"
   @url "https://github.com/dominicletz/live_attribute"
   @maintainers ["Dominic Letz"]
@@ -54,7 +54,7 @@ defmodule LiveAttribute.MixProject do
   end
 
   def application do
-    [extra_applications: [:global]]
+    [extra_applications: []]
   end
 
   defp deps do
