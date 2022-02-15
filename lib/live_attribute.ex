@@ -125,7 +125,10 @@ defmodule LiveAttribute do
 
         update_fun = fn socket ->
           Enum.reduce(refresher, socket, fn {key, value}, socket ->
-            assign(socket, [{key, LiveAttribute.apply(socket, value)}])
+            case key do
+              :socket -> value.(socket)
+              key -> assign(socket, [{key, LiveAttribute.apply(socket, value)}])
+            end
           end)
         end
 
@@ -137,9 +140,13 @@ defmodule LiveAttribute do
               Enum.map(refresher, fn {key, _fun} -> {key, pid} end)
               |> Map.new()
 
+            meta = Map.get(socket.assigns, :_live_attributes, %{})
+
             meta =
-              Map.get(socket.assigns, :_live_attributes, %{})
-              |> Map.merge(entry)
+              Enum.reduce(entry, meta, fn {key, pid}, meta ->
+                LiveAttribute.stop(Map.get(meta, key))
+                Map.put(meta, key, pid)
+              end)
 
             assign(socket, _live_attributes: meta)
           else
@@ -193,6 +200,12 @@ defmodule LiveAttribute do
     Process.monitor(target)
     subscribe.()
     {:ok, la}
+  end
+
+  def stop(nil), do: :ok
+
+  def stop(pid) do
+    GenServer.stop(pid, :normal)
   end
 
   @impl true
