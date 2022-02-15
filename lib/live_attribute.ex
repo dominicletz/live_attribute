@@ -205,7 +205,7 @@ defmodule LiveAttribute do
   def stop(nil), do: :ok
 
   def stop(pid) do
-    GenServer.stop(pid, :normal)
+    GenServer.cast(pid, :stop)
   end
 
   @impl true
@@ -230,6 +230,11 @@ defmodule LiveAttribute do
   @impl true
   def handle_call(:get_refresher, _from, %LiveAttribute{refresher: refresher} = state) do
     {:reply, refresher, state}
+  end
+
+  @impl true
+  def handle_cast(:stop, %LiveAttribute{} = state) do
+    {:stop, :normal, state}
   end
 
   @doc false
