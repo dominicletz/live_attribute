@@ -1,7 +1,7 @@
 defmodule LiveAttribute.MixProject do
   use Mix.Project
 
-  @version "1.1.1"
+  @version "1.1.2"
   @name "LiveAttribute"
   @url "https://github.com/dominicletz/live_attribute"
   @maintainers ["Dominic Letz"]
