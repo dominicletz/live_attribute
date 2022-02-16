@@ -102,8 +102,8 @@ defmodule LiveAttribute do
     quote do
       import LiveAttribute, only: [update_attribute: 2]
 
-      def handle_info({LiveAttribute, refresher}, socket) do
-        {:noreply, refresher.(socket)}
+      def handle_info({LiveAttribute, refresher, updates}, socket) do
+        {:noreply, refresher.(socket, updates)}
       end
 
       def assign_attribute(socket, {subscribe, refresher}),
@@ -123,12 +123,15 @@ defmodule LiveAttribute do
       def assign_attribute(socket, subscribe, filter, refresher) when is_list(refresher) do
         keys = Keyword.keys(refresher)
 
-        update_fun = fn socket ->
-          Enum.reduce(refresher, socket, fn {key, value}, socket ->
-            case key do
-              :socket -> value.(socket)
-              key -> assign(socket, [{key, LiveAttribute.apply(socket, value)}])
-            end
+        update_fun = fn socket, updates ->
+          Enum.reduce(refresher, socket, fn
+            {:socket, value}, socket ->
+              value.(socket)
+
+            {key, value}, socket ->
+              reload = fn -> LiveAttribute.apply(socket, value) end
+              value = Map.get_lazy(updates, key, reload)
+              assign(socket, [{key, value}])
           end)
         end
 
@@ -153,7 +156,7 @@ defmodule LiveAttribute do
             socket
           end
 
-        update_fun.(socket)
+        update_fun.(socket, %{})
       end
 
       def assign_attribute(socket, subscribe, filter, refresher) when is_function(refresher, 1) do
@@ -174,7 +177,7 @@ defmodule LiveAttribute do
 
     if pid != nil do
       refresher = GenServer.call(pid, :get_refresher)
-      refresher.(socket)
+      refresher.(socket, %{})
     else
       Logger.error("update_attribute: #{inspect(name)} is not bound")
       socket
@@ -220,8 +223,9 @@ defmodule LiveAttribute do
         any,
         %LiveAttribute{target: target, refresher: refresher, filter: filter} = state
       ) do
-    if matches?(filter, any) do
-      send(target, {LiveAttribute, refresher})
+    case matches?(filter, any) do
+      false -> :noop
+      %{} = updates -> send(target, {LiveAttribute, refresher, updates})
     end
 
     {:noreply, state}
@@ -238,15 +242,26 @@ defmodule LiveAttribute do
   end
 
   @doc false
-  def matches?(:_, _any), do: true
+  def matches?({:"$", key}, value), do: %{key => value}
+  def matches?(:_, _any), do: %{}
   def matches?(fun, any) when is_function(fun, 1), do: fun.(any)
-  def matches?(same, same), do: true
+  def matches?(same, same), do: %{}
 
   def matches?(tuple1, tuple2) when is_tuple(tuple1) and is_tuple(tuple2),
     do: matches?(Tuple.to_list(tuple1), Tuple.to_list(tuple2))
 
-  def matches?([head1 | rest1], [head2 | rest2]),
-    do: matches?(head1, head2) and matches?(rest1, rest2)
+  def matches?([head1 | rest1], [head2 | rest2]) do
+    case matches?(head1, head2) do
+      false ->
+        false
+
+      %{} = updates ->
+        case matches?(rest1, rest2) do
+          false -> false
+          %{} = more_updates -> Map.merge(updates, more_updates)
+        end
+    end
+  end
 
   def matches?(_, _), do: false
 
