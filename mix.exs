@@ -1,7 +1,7 @@
 defmodule LiveAttribute.MixProject do
   use Mix.Project
 
-  @version "1.1.2"
+  @version "1.1.3"
   @name "LiveAttribute"
   @url "https://github.com/dominicletz/live_attribute"
   @maintainers ["Dominic Letz"]
@@ -59,6 +59,7 @@ defmodule LiveAttribute.MixProject do
 
   defp deps do
     [
+      {:phoenix_live_view, ">= 0.16.0"},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.22", only: :dev, runtime: false}
     ]
