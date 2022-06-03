@@ -255,18 +255,14 @@ defmodule LiveAttribute do
       if connected?(socket) do
         {:ok, pid} = LiveAttribute.new(subscribe, filter, update_fun, keys)
 
-        entry =
-          Enum.map(refresher, fn {key, _fun} -> {key, pid} end)
-          |> Map.new()
+        id =
+          Keyword.keys(refresher)
+          |> Enum.sort()
 
         meta = Map.get(socket.assigns, :_live_attributes, %{})
 
-        meta =
-          Enum.reduce(entry, meta, fn {key, pid}, meta ->
-            LiveAttribute.stop(Map.get(meta, key))
-            Map.put(meta, key, pid)
-          end)
-
+        LiveAttribute.stop(Map.get(meta, id))
+        meta = Map.put(meta, id, pid)
         assign(socket, _live_attributes: meta)
       else
         socket
