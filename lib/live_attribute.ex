@@ -113,7 +113,7 @@ defmodule LiveAttribute do
   end)
   ```
   """
-  @type refresher :: [{atom(), (() -> any()) | (socket() -> any())}] | (socket() -> socket())
+  @type refresher :: [{atom(), (-> any()) | (socket() -> any())}] | (socket() -> socket())
 
   @typedoc """
   The filter allows doing optimzation by a) ignoring certain events of the subscription
@@ -174,7 +174,7 @@ defmodule LiveAttribute do
     end)
   ```
   """
-  @type filter :: atom() | tuple() | list() | (() -> false | %{})
+  @type filter :: atom() | tuple() | list() | (-> false | %{})
 
   defmacro __using__(_opts) do
     quote do
@@ -230,7 +230,7 @@ defmodule LiveAttribute do
   """
   @spec assign_attribute(
           socket(),
-          (() -> any()),
+          (-> any()),
           filter(),
           refresher()
         ) :: socket()
@@ -397,8 +397,15 @@ defmodule LiveAttribute do
 
   defp assign(socket, values) do
     case socket do
-      %Phoenix.LiveView.Socket{} -> Phoenix.LiveView.assign(socket, values)
-      %other{} -> other.assign(socket, values)
+      %Phoenix.LiveView.Socket{} ->
+        if function_exported?(Phoenix.LiveView, :assign, 2) do
+          apply(Phoenix.LiveView, :assign, [socket, values])
+        else
+          apply(Phoenix.Component, :assign, [socket, values])
+        end
+
+      %other{} ->
+        other.assign(socket, values)
     end
   end
 end
